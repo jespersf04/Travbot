@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080c14">
+<title>TravBot</title>
+<style>
+  :root {
+    --bg: #080c14; --card: #0e1420; --card2: #111827;
+    --border: #1a2540; --accent: #00d4ff;
+    --gold: #f5c842; --green: #22c55e; --red: #ef4444;
+    --purple: #a78bfa; --orange: #f97316;
+    --muted: #4a5568; --text: #e2e8f0; --textdim: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', 'Courier New', monospace; min-height: 100vh; padding-bottom: 40px; }
+
+  .header { background: linear-gradient(180deg,#0c1628,#080c14); border-bottom: 1px solid var(--border); padding: 20px 16px 16px; text-align: center; }
+  .header-sub { font-size: 9px; letter-spacing: 5px; color: var(--accent); margin-bottom: 4px; }
+  .header-title { font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+  .header-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .tabs { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+  .tab { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; background: #1a2540; color: var(--muted); transition: all .3s; }
+  .tab.active { background: var(--accent); color: #000; }
+
+  .content { padding: 16px 14px; max-width: 480px; margin: 0 auto; }
+
+  .error { background: #200a0a; border: 1px solid rgba(239,68,68,.4); border-radius: 10px; padding: 12px; margin-bottom: 14px; font-size: 12px; color: #fca5a5; line-height: 1.6; }
+
+  /* GAME LIST */
+  .game-btn { width: 100%; text-align: left; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; color: var(--text); transition: border-color .2s; }
+  .game-btn:active { border-color: var(--accent); }
+  .game-btn h3 { font-size: 15px; font-weight: 800; }
+  .game-btn p { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* RACE LIST */
+  .back-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px; margin-bottom: 12px; padding: 0; font-family: inherit; }
+  .section-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; margin-bottom: 10px; }
+
+  /* FIELD STATS */
+  .field-stats { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .stat-label { font-size: 11px; color: var(--textdim); }
+  .stat-val { font-size: 12px; font-weight: 700; }
+
+  .weight-bar-wrap { margin-top: 12px; }
+  .weight-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .weight-label { font-size: 10px; color: var(--textdim); min-width: 90px; }
+  .bar-track { background: var(--border); border-radius: 3px; height: 5px; flex: 1; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .weight-pct { font-size: 10px; font-weight: 700; min-width: 28px; text-align: right; }
+
+  /* HORSE CARD */
+  .horse-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .2s; }
+  .horse-card.top { background: linear-gradient(135deg,#0d1f30,#091828); border-color: var(--accent); box-shadow: 0 0 24px rgba(0,212,255,.1); }
+  .horse-card.value { border-color: var(--green); box-shadow: 0 0 16px rgba(34,197,94,.1); }
+
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .tag { padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1px; }
+
+  .horse-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .horse-left { display: flex; align-items: center; gap: 10px; }
+  .horse-num { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,212,255,.15); border: 2px solid rgba(0,212,255,.35); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; color: var(--accent); flex-shrink: 0; }
+  .horse-name { font-weight: 800; font-size: 15px; }
+  .horse-driver { font-size: 11px; color: var(--textdim); margin-top: 2px; }
+  .horse-odds { font-size: 26px; font-weight: 900; line-height: 1; }
+  .horse-odds-label { font-size: 9px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; text-align: right; }
+
+  .score-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .score-label { font-size: 10px; color: var(--muted); min-width: 44px; }
+  .score-val { font-size: 13px; font-weight: 900; min-width: 30px; text-align: right; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .stat-box { background: var(--card2); border-radius: 8px; padding: 8px 10px; }
+  .stat-box-label { font-size: 8px; color: var(--muted); letter-spacing: 1px; margin-bottom: 3px; }
+  .stat-box-val { font-size: 14px; font-weight: 800; }
+
+  .details { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+  .details-title { font-size: 10px; color: var(--accent); letter-spacing: 2px; margin-bottom: 8px; }
+
+  .benter-box { margin-top: 10px; background: var(--card2); border-radius: 8px; padding: 10px; }
+  .benter-title { font-size: 9px; color: var(--purple); letter-spacing: 1px; margin-bottom: 4px; }
+  .benter-text { font-size: 11px; color: var(--textdim); line-height: 1.6; }
+
+  .toggle-hint { text-align: center; margin-top: 10px; font-size: 10px; color: var(--muted); }
+
+  /* AI ANALYSIS */
+  .ai-box { background: linear-gradient(135deg,#0a160a,#0d1a0d); border: 1px solid rgba(34,197,94,.3); border-radius: 14px; padding: 16px; margin-top: 14px; }
+  .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .ai-title { font-size: 10px; color: var(--green); letter-spacing: 2px; font-weight: 800; }
+  .ai-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .ai-btn { background: var(--green); color: #000; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 900; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .ai-btn:disabled { background: var(--muted); cursor: not-allowed; }
+  .ai-reset { background: none; border: 1px solid var(--border); color: var(--textdim); border-radius: 8px; padding: 6px 12px; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .ai-text { color: var(--text); font-size: 13px; line-height: 1.8; white-space: pre-wrap; border-top: 1px solid var(--border); padding-top: 12px; }
+  .ai-placeholder { color: var(--muted); font-size: 12px; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 60px 20px; }
+  .loading-icon { font-size: 44px; margin-bottom: 12px; }
+  .loading-text { color: var(--accent); font-size: 12px; letter-spacing: 3px; }
+
+  /* INFO BOX */
+  .info-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 14px; }
+  .info-title { font-size: 9px; color: var(--purple); letter-spacing: 2px; margin-bottom: 6px; }
+  .info-text { font-size: 11px; color: var(--textdim); line-height: 1.7; }
+
+  .result-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+  .result-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; }
+  .result-name { font-size: 17px; font-weight: 800; }
+  .new-btn { background: none; border: 1px solid var(--border); color: var(--textdim); border-radius: 8px; padding: 6px 12px; font-size: 11px; cursor: pointer; font-family: inherit; }
+
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-sub">ATG TRAVANALYS · LIVE DATA</div>
+  <div class="header-title">🏇 TRAVBOT</div>
+  <div class="header-desc">Hämtar ATG automatiskt · AI-analys · Värdeslagring</div>
+  <div class="tabs">
+    <div class="tab active" id="tab1">1. Spelform</div>
+    <div class="tab" id="tab2">2. Lopp</div>
+    <div class="tab" id="tab3">3. Hästar</div>
+  </div>
+</div>
+
+<div class="content" id="app"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// This will be replaced with your Railway URL after deploy
+const API = window.location.origin;
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let state = { step: "games", games: [], races: [], horses: [], raceName: "", selectedGame: null };
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function oddsToImplied(odds) { return (1 / parseFloat(odds)) * 100; }
+
+function setTab(n) {
+  [1,2,3].forEach(i => document.getElementById(`tab${i}`).className = `tab${i===n?" active":""}`);
+}
+
+function el(tag, cls, html, styles) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html) e.innerHTML = html;
+  if (styles) Object.assign(e.style, styles);
+  return e;
+}
+
+function showError(msg) {
+  const app = document.getElementById("app");
+  const old = app.querySelector(".error");
+  if (old) old.remove();
+  const div = el("div", "error", `⚠️ ${msg}`);
+  app.prepend(div);
+  setTimeout(() => div.remove(), 8000);
+}
+
+function showLoading(msg) {
+  document.getElementById("app").innerHTML = `
+    <div class="loading">
+      <div class="loading-icon"><span class="spinner">🏇</span></div>
+      <div class="loading-text">${msg}</div>
+    </div>`;
+}
+
+// ─── FETCH ────────────────────────────────────────────────────────────────────
+async function apiFetch(path) {
+  const r = await fetch(`${API}${path}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// ─── RENDER GAMES ─────────────────────────────────────────────────────────────
+async function renderGames() {
+  setTab(1);
+  showLoading("HÄMTAR DAGENS SPELPROGRAM...");
+  try {
+    const data = await apiFetch("/api/today");
+    state.games = data.games || [];
+    const app = document.getElementById("app");
+    app.innerHTML = `<div class="section-label">VÄLJ SPELFORM</div>`;
+    if (!state.games.length) { app.innerHTML += `<div class="error">Inga spel hittades idag.</div>`; return; }
+    state.games.forEach(game => {
+      const btn = el("button", "game-btn", `
+        <h3>${(game.type || game.id).toUpperCase()}</h3>
+        <p>${(game.races||[]).length} lopp · ${game.track?.name || ""} · ${game.startTime ? new Date(game.startTime).toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}) : ""}</p>
+      `);
+      btn.onclick = () => renderRaces(game);
+      app.appendChild(btn);
+    });
+  } catch(e) {
+    document.getElementById("app").innerHTML = "";
+    showError(`Kunde inte hämta spelprogram: ${e.message}`);
+  }
+}
+
+// ─── RENDER RACES ─────────────────────────────────────────────────────────────
+async function renderRaces(game) {
+  setTab(2);
+  state.selectedGame = game;
+  showLoading("HÄMTAR LOPP...");
+  try {
+    const data = await apiFetch(`/api/game/${game.id}`);
+    state.races = data.races || [];
+    const app = document.getElementById("app");
+    app.innerHTML = "";
+    const back = el("button", "back-btn", "← Tillbaka");
+    back.onclick = renderGames;
+    app.appendChild(back);
+    app.appendChild(el("div", "section-label", "VÄLJ LOPP"));
+    state.races.forEach((race, i) => {
+      const btn = el("button", "game-btn", `
+        <h3>Lopp ${race.number || i+1} – ${race.name || ""}</h3>
+        <p>${race.distance||"?"}m · ${race.startMethod||""} · ${race.startTime ? new Date(race.startTime).toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}) : ""}</p>
+      `);
+      btn.onclick = () => renderHorses(race);
+      app.appendChild(btn);
+    });
+  } catch(e) {
+    showError(`Kunde inte hämta lopp: ${e.message}`);
+  }
+}
+
+// ─── RENDER HORSES ────────────────────────────────────────────────────────────
+async function renderHorses(race) {
+  setTab(3);
+  showLoading("HÄMTAR HÄSTAR...");
+  try {
+    const data = await apiFetch(`/api/race/${race.id}`);
+    state.horses = (data.starts || race.starts || []).filter(h => h.odds?.place?.["1"] || h.odds?.win);
+    state.raceName = race.name || `Lopp ${race.number}`;
+    renderResult();
+  } catch(e) {
+    if (race.starts?.length) { state.horses = race.starts; state.raceName = race.name || `Lopp ${race.number}`; renderResult(); }
+    else showError(`Kunde inte hämta hästar: ${e.message}`);
+  }
+}
+
+// ─── RENDER RESULT ────────────────────────────────────────────────────────────
+function renderResult() {
+  const horses = [...state.horses].sort((a,b) => {
+    const oa = parseFloat(a.odds?.place?.["1"] || a.odds?.win || 999);
+    const ob = parseFloat(b.odds?.place?.["1"] || b.odds?.win || 999);
+    return oa - ob;
+  });
+
+  const allOdds = horses.map(h => parseFloat(h.odds?.place?.["1"] || h.odds?.win));
+  const totalImplied = allOdds.reduce((s,o) => s + oddsToImplied(o), 0);
+  const overround = (totalImplied - 100).toFixed(1);
+  const minOdds = Math.min(...allOdds);
+
+  const valueHorses = horses.filter((h,i) => {
+    const odds = parseFloat(h.odds?.place?.["1"] || h.odds?.win);
+    const impl = oddsToImplied(odds);
+    const share = (impl / totalImplied) * 100;
+    return odds >= 5 && i >= 1 && share < ((horses.length-i)/horses.length)*45;
+  });
+
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  // Back + header
+  const back = el("button","back-btn","← Tillbaka");
+  back.onclick = () => renderRaces(state.selectedGame);
+  app.appendChild(back);
+
+  const hdr = el("div","result-header");
+  hdr.innerHTML = `<div><div class="result-label">LOPP</div><div class="result-name">${state.raceName}</div></div>`;
+  const newBtn = el("button","new-btn","+ Nytt lopp");
+  newBtn.onclick = renderGames;
+  hdr.appendChild(newBtn);
+  app.appendChild(hdr);
+
+  // Field stats
+  const fs = el("div","field-stats");
+  fs.innerHTML = `<div class="section-label" style="margin-bottom:10px">FÄLTÖVERSIKT</div>`;
+  [
+    ["Antal hästar", `${horses.length} st`, ""],
+    ["Poolöverrund", `+${overround}%`, "var(--gold)"],
+    ["ATGs husandel", "~25-30%", "var(--red)"],
+    ["Värdespel identifierade", valueHorses.length > 0 ? `${valueHorses.length} st (${valueHorses.map(h=>`#${h.number}`).join(", ")})` : "Inga", valueHorses.length > 0 ? "var(--green)" : "var(--textdim)"],
+  ].forEach(([label, val, color]) => {
+    const row = el("div","stat-row");
+    row.innerHTML = `<span class="stat-label">${label}</span><span class="stat-val" style="color:${color||"var(--text)"}">${val}</span>`;
+    fs.appendChild(row);
+  });
+
+  // Weight bars
+  const wb = el("div","weight-bar-wrap");
+  wb.innerHTML = `<div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:8px">MODELLVIKTER</div>`;
+  [["Spår/Fält",31,"var(--accent)"],["Bana/Distans",23,"var(--gold)"],["Kusk/Tränare",18,"var(--green)"],["Utrustning",15,"var(--orange)"],["Pooldynamik",13,"var(--purple)"]].forEach(([label,pct,color]) => {
+    wb.innerHTML += `<div class="weight-row">
+      <div class="weight-label">${label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(pct/35)*100}%;background:${color}"></div></div>
+      <div class="weight-pct" style="color:${color}">${pct}%</div>
+    </div>`;
+  });
+  fs.appendChild(wb);
+  app.appendChild(fs);
+
+  // Horse cards
+  horses.forEach((horse, rank) => {
+    const odds = parseFloat(horse.odds?.place?.["1"] || horse.odds?.win);
+    const impl = oddsToImplied(odds);
+    const share = (impl / totalImplied) * 100;
+    const isTop = odds === minOdds;
+    const isValue = odds >= 5 && rank >= 1 && share < ((horses.length-rank)/horses.length)*45;
+    const score = Math.min(99, Math.round(((horses.length-rank)/horses.length)*65 + Math.max(0,30-share)*0.8));
+    const scoreColor = score>65?"var(--green)":score>40?"var(--gold)":"var(--red)";
+    const oddsColor = odds<3?"var(--red)":odds>10?"var(--green)":"var(--gold)";
+
+    // Benter blend
+    const rankProb = ((horses.length-rank)/horses.length)*0.7;
+    const mktProb = impl/100;
+    const logM = Math.log(Math.max(.001,mktProb)/Math.max(.001,1-mktProb));
+    const logR = Math.log(Math.max(.001,rankProb)/Math.max(.001,1-rankProb));
+    const blend = 0.6*logR + 0.4*logM;
+    const benter = (1/(1+Math.exp(-blend))*100).toFixed(1);
+
+    const driver = horse.driver?.firstName ? `${horse.driver.firstName} ${horse.driver.lastName}` : horse.driver?.shortName || "–";
+    const trainer = horse.trainer?.firstName ? `${horse.trainer.firstName} ${horse.trainer.lastName}` : horse.trainer?.shortName || "";
+
+    const card = el("div", `horse-card${isTop?" top":""}${isValue?" value":""}`);
+    card.innerHTML = `
+      <div class="tags">
+        ${isTop?`<span class="tag" style="background:rgba(0,212,255,.15);color:var(--accent);border:1px solid rgba(0,212,255,.3)">FAVORIT</span>`:""}
+        ${isValue?`<span class="tag" style="background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)">⭐ VÄRDESPEL?</span>`:""}
+      </div>
+      <div class="horse-main">
+        <div class="horse-left">
+          <div class="horse-num">${horse.number}</div>
+          <div>
+            <div class="horse-name">${horse.name}</div>
+            <div class="horse-driver">🧑 ${driver}</div>
+            ${trainer?`<div style="font-size:10px;color:var(--muted);margin-top:1px">🎯 ${trainer}</div>`:""}
+          </div>
+        </div>
+        <div>
+          <div class="horse-odds" style="color:${oddsColor}">${odds.toFixed(2)}</div>
+          <div class="horse-odds-label">V-ODDS</div>
+        </div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">POÄNG</div>
+        <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${score}%;background:${scoreColor}"></div></div>
+        <div class="score-val" style="color:${scoreColor}">${score}</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-box-label">POOLANDEL</div>
+          <div class="stat-box-val" style="color:${share>50?"var(--red)":share>25?"var(--gold)":"var(--green)"}">${share.toFixed(1)}%</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">IMPLICIT</div>
+          <div class="stat-box-val">${impl.toFixed(1)}%</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">BENTER</div>
+          <div class="stat-box-val" style="color:var(--purple)">${benter}%</div>
+        </div>
+      </div>
+      <div class="details" style="display:none" id="details-${horse.number}">
+        <div class="details-title">DETALJAD ANALYS</div>
+        ${[
+          ["V-Odds", odds.toFixed(2), oddsColor],
+          ["Implicit vinstchans", `${impl.toFixed(1)}%`, ""],
+          ["Andel av pool", `${share.toFixed(1)}%`, share>40?"var(--red)":"var(--green)"],
+          ["Benter-kalibrerad", `${benter}%`, "var(--purple)"],
+          ["Modellpoäng", `${score}/100`, scoreColor],
+          ["Värdebedömning", isValue?"✅ Underskattad":isTop&&odds<1.5?"⚠️ Överspelad?":"➖ Neutral", isValue?"var(--green)":isTop&&odds<1.5?"var(--gold)":"var(--textdim)"],
+        ].map(([l,v,c])=>`<div class="stat-row"><span class="stat-label">${l}</span><span class="stat-val" style="color:${c||"var(--text)"}">${v}</span></div>`).join("")}
+        <div class="benter-box">
+          <div class="benter-title">BENTER LOG-ODDS BLEND (α=0.6)</div>
+          <div class="benter-text">Kombinerar modellens analys (60%) med marknadens poolodds (40%). Hästar där kalibrerad chans > poolandel = potentiellt värdespel.</div>
+        </div>
+      </div>
+      <div class="toggle-hint" id="hint-${horse.number}">▼ Visa alla siffror</div>
+    `;
+
+    card.onclick = () => {
+      const d = document.getElementById(`details-${horse.number}`);
+      const h = document.getElementById(`hint-${horse.number}`);
+      const open = d.style.display !== "none";
+      d.style.display = open ? "none" : "block";
+      h.textContent = open ? "▼ Visa alla siffror" : "▲ Dölj detaljer";
+    };
+
+    app.appendChild(card);
+  });
+
+  // AI Analysis
+  const aiBox = el("div","ai-box");
+  aiBox.innerHTML = `
+    <div class="ai-header">
+      <div><div class="ai-title">🤖 AI-ANALYS</div><div class="ai-sub">Benter-kalibrerad · Värdebaserad</div></div>
+      <button class="ai-btn" id="ai-btn">ANALYSERA</button>
+    </div>
+    <div id="ai-output" class="ai-placeholder">Tryck Analysera för värdebaserade rekommendationer.</div>
+  `;
+  app.appendChild(aiBox);
+
+  document.getElementById("ai-btn").onclick = async function() {
+    this.disabled = true;
+    this.textContent = "⏳ ANALYSERAR...";
+    document.getElementById("ai-output").innerHTML = `<span style="color:var(--textdim);font-style:italic">Analyserar fältet med kvantitativ modell...</span>`;
+
+    const list = horses.map(h => {
+      const odds = parseFloat(h.odds?.place?.["1"] || h.odds?.win);
+      const driver = h.driver?.firstName ? `${h.driver.firstName} ${h.driver.lastName}` : h.driver?.shortName || "okänd";
+      return `#${h.number} ${h.name} | Kusk: ${driver} | Odds: ${odds.toFixed(2)} | Implicit: ${oddsToImplied(odds).toFixed(1)}% | Poolandel: ${((oddsToImplied(odds)/totalImplied)*100).toFixed(1)}%`;
+    }).join("\n");
+
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raceName: state.raceName, horses: list })
+      });
+      const data = await res.json();
+      document.getElementById("ai-output").className = "ai-text";
+      document.getElementById("ai-output").textContent = data.analysis;
+      this.textContent = "✓ ANALYSERAD";
+      this.style.background = "var(--muted)";
+    } catch {
+      document.getElementById("ai-output").textContent = "Kunde inte analysera. Kontrollera att ANTHROPIC_API_KEY är satt.";
+      this.disabled = false;
+      this.textContent = "FÖRSÖK IGEN";
+    }
+  };
+
+  // Info
+  app.innerHTML += `
+    <div class="info-box">
+      <div class="info-title">OM MODELLEN</div>
+      <div class="info-text">XGBoost pairwise ranking · Benter log-odds blend (α=0.6) · Modellvikter baserade på professionell travforskning. ⚠️ Spela alltid ansvarsfullt.</div>
+    </div>`;
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+renderGames();
+</script>
+</body>
+</html>
