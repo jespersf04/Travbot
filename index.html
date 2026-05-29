@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080c14">
+<title>TravBot</title>
+<style>
+  :root{--bg:#080c14;--card:#0e1420;--card2:#111827;--border:#1a2540;--accent:#00d4ff;--gold:#f5c842;--green:#22c55e;--red:#ef4444;--purple:#a78bfa;--orange:#f97316;--muted:#4a5568;--text:#e2e8f0;--textdim:#94a3b8}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono','Courier New',monospace;min-height:100vh;padding-bottom:40px}
+  .header{background:linear-gradient(180deg,#0c1628,#080c14);border-bottom:1px solid var(--border);padding:20px 16px 16px;text-align:center}
+  .header-sub{font-size:9px;letter-spacing:5px;color:var(--accent);margin-bottom:4px}
+  .header-title{font-size:28px;font-weight:900;letter-spacing:-1px}
+  .header-desc{font-size:11px;color:var(--muted);margin-top:4px}
+  .tabs{display:flex;justify-content:center;gap:6px;margin-top:12px}
+  .tab{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;background:#1a2540;color:var(--muted);transition:all .3s}
+  .tab.active{background:var(--accent);color:#000}
+  .content{padding:16px 14px;max-width:480px;margin:0 auto}
+  .error{background:#200a0a;border:1px solid rgba(239,68,68,.4);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;color:#fca5a5;line-height:1.6}
+  .game-btn{width:100%;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;color:var(--text);font-family:inherit}
+  .game-btn h3{font-size:15px;font-weight:800}
+  .game-btn p{font-size:11px;color:var(--muted);margin-top:3px}
+  .back-btn{background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;margin-bottom:12px;padding:0;font-family:inherit}
+  .section-label{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:10px}
+  .loading{text-align:center;padding:60px 20px}
+  .spin{font-size:44px;margin-bottom:12px;animation:spin 1.5s linear infinite;display:inline-block}
+  .loading-text{color:var(--accent);font-size:12px;letter-spacing:3px;margin-bottom:6px}
+  .loading-sub{color:var(--muted);font-size:11px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .field-stats{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px}
+  .sec-lbl{font-size:10px;color:var(--accent);letter-spacing:2px;margin-bottom:10px}
+  .stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+  .stat-label{font-size:11px;color:var(--textdim)}
+  .stat-val{font-size:12px;font-weight:700}
+  .w-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .w-label{font-size:10px;color:var(--textdim);min-width:90px}
+  .bar-track{background:var(--border);border-radius:3px;height:5px;flex:1;overflow:hidden}
+  .bar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+  .w-pct{font-size:10px;font-weight:700;min-width:28px;text-align:right}
+  .horse-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer}
+  .horse-card.top{background:linear-gradient(135deg,#0d1f30,#091828);border-color:var(--accent);box-shadow:0 0 24px rgba(0,212,255,.1)}
+  .horse-card.value{border-color:var(--green);box-shadow:0 0 16px rgba(34,197,94,.1)}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;min-height:4px}
+  .tag{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:800;letter-spacing:1px}
+  .horse-main{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .horse-left{display:flex;align-items:center;gap:10px}
+  .horse-num{width:40px;height:40px;border-radius:50%;background:rgba(0,212,255,.15);border:2px solid rgba(0,212,255,.35);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:var(--accent);flex-shrink:0}
+  .horse-name{font-weight:800;font-size:15px}
+  .horse-driver{font-size:11px;color:var(--textdim);margin-top:2px}
+  .horse-odds{font-size:26px;font-weight:900;line-height:1}
+  .odds-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:2px;text-align:right}
+  .score-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .score-lbl{font-size:10px;color:var(--muted);min-width:44px}
+  .score-val{font-size:13px;font-weight:900;min-width:30px;text-align:right}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .stat-box{background:var(--card2);border-radius:8px;padding:8px 10px}
+  .stat-box-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:3px}
+  .stat-box-val{font-size:14px;font-weight:800}
+  .details{margin-top:14px;border-top:1px solid var(--border);padding-top:12px;display:none}
+  .benter-box{margin-top:10px;background:var(--card2);border-radius:8px;padding:10px}
+  .toggle-hint{text-align:center;margin-top:10px;font-size:10px;color:var(--muted)}
+  .ai-box{background:linear-gradient(135deg,#0a160a,#0d1a0d);border:1px solid rgba(34,197,94,.3);border-radius:14px;padding:16px;margin-top:14px}
+  .ai-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .ai-title{font-size:10px;color:var(--green);letter-spacing:2px;font-weight:800}
+  .ai-sub{font-size:10px;color:var(--muted);margin-top:2px}
+  .ai-btn{background:var(--green);color:#000;border:none;border-radius:8px;padding:10px 20px;font-weight:900;font-size:12px;cursor:pointer;font-family:inherit}
+  .ai-btn:disabled{background:var(--muted);cursor:not-allowed}
+  .ai-text{color:var(--text);font-size:13px;line-height:1.8;white-space:pre-wrap;border-top:1px solid var(--border);padding-top:12px}
+  .ai-placeholder{color:var(--muted);font-size:12px}
+  .info-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px}
+  .result-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+  .new-btn{background:none;border:1px solid var(--border);color:var(--textdim);border-radius:8px;padding:6px 12px;font-size:11px;cursor:pointer;font-family:inherit}
+  /* upload */
+  .upload-zone{border:2px dashed rgba(0,212,255,.5);border-radius:16px;padding:44px 24px;text-align:center;cursor:pointer;background:rgba(0,212,255,.06)}
+  .upload-btn-label{background:var(--accent);color:#000;border-radius:10px;padding:12px 28px;font-weight:900;font-size:14px;display:inline-block;margin-top:16px}
+  .tips{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px}
+  .tip-row{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)}
+  .or-divider{text-align:center;color:var(--muted);font-size:11px;margin:16px 0;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-sub">ATG TRAVANALYS · AI-DRIVEN</div>
+  <div class="header-title">🏇 TRAVBOT</div>
+  <div class="header-desc">Live från ATG · Screenshot-analys · AI-rekommendationer</div>
+  <div class="tabs">
+    <div class="tab active" id="tab1">1. Spelform</div>
+    <div class="tab" id="tab2">2. Lopp</div>
+    <div class="tab" id="tab3">3. Analys</div>
+  </div>
+</div>
+
+<div class="content" id="app"></div>
+
+<script>
+const API=window.location.origin;
+let state={games:[],races:[],horses:[],raceName:"",selectedGame:null};
+
+function oddsToImplied(o){return(1/parseFloat(o))*100}
+function setTab(n){[1,2,3].forEach(i=>document.getElementById("tab"+i).className="tab"+(i===n?" active":""))}
+function showError(msg){document.querySelectorAll(".error").forEach(e=>e.remove());const d=document.createElement("div");d.className="error";d.innerHTML="⚠️ "+msg;document.getElementById("app").prepend(d)}
+
+// ── STEP 1: Games ─────────────────────────────────────────────────────────────
+async function renderGames(){
+  setTab(1);
+  document.getElementById("app").innerHTML=`<div class="loading"><div class="spin">🏇</div><div class="loading-text">HÄMTAR SPELPROGRAM...</div><div class="loading-sub">Hämtar från ATG</div></div>`;
+  try{
+    const res=await fetch(`${API}/api/today`);
+    const data=await res.json();
+    const games=data.games||[];
+    const app=document.getElementById("app");
+    app.innerHTML=`<div class="section-label">VÄLJ SPELFORM</div>`;
+    if(!games.length){app.innerHTML+=`<div class="error">Inga spel idag – prova screenshot-läget nedan.</div>`;addScreenshotFallback(app);return;}
+    games.forEach(g=>{
+      const btn=document.createElement("button");
+      btn.className="game-btn";
+      btn.innerHTML=`<h3>${(g.type||g.id||"").toUpperCase()}</h3><p>${(g.races||[]).length} lopp · ${g.track?.name||""}</p>`;
+      btn.onclick=()=>renderRaces(g);
+      app.appendChild(btn);
+    });
+    addScreenshotFallback(app);
+  }catch(e){
+    document.getElementById("app").innerHTML="";
+    showError("Kunde inte nå ATG – använd screenshot-läget.");
+    addScreenshotFallback(document.getElementById("app"));
+  }
+}
+
+function addScreenshotFallback(container){
+  const div=document.createElement("div");
+  div.innerHTML=`
+    <div class="or-divider">— ELLER —</div>
+    <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+    <div class="upload-zone" id="uploadZone">
+      <div style="font-size:36px;margin-bottom:8px">📸</div>
+      <div style="font-size:14px;font-weight:800;margin-bottom:6px">Ta screenshot från ATG-appen</div>
+      <div style="font-size:11px;color:var(--textdim);line-height:1.7">Öppna ett lopp i ATG → screenshot → ladda upp här.<br>Du kan välja flera bilder om listan är lång.</div>
+      <div class="upload-btn-label">VÄLJ BILD(ER)</div>
+    </div>
+  `;
+  container.appendChild(div);
+  div.querySelector("#uploadZone").onclick=()=>div.querySelector("#fileInput").click();
+  div.querySelector("#fileInput").onchange=e=>handleScreenshot(e.target.files);
+}
+
+// ── STEP 2: Races ─────────────────────────────────────────────────────────────
+async function renderRaces(game){
+  setTab(2);state.selectedGame=game;
+  document.getElementById("app").innerHTML=`<div class="loading"><div class="spin">🏇</div><div class="loading-text">HÄMTAR LOPP...</div></div>`;
+  try{
+    const res=await fetch(`${API}/api/game/${game.id}`);
+    const data=await res.json();
+    state.races=data.races||[];
+    const app=document.getElementById("app");
+    app.innerHTML="";
+    const back=document.createElement("button");back.className="back-btn";back.textContent="← Tillbaka";back.onclick=renderGames;app.appendChild(back);
+    app.appendChild(Object.assign(document.createElement("div"),{className:"section-label",textContent:"VÄLJ LOPP"}));
+    state.races.forEach((race,i)=>{
+      const btn=document.createElement("button");btn.className="game-btn";
+      const t=race.startTime?new Date(race.startTime).toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}):"";
+      btn.innerHTML=`<h3>Lopp ${race.number||i+1} – ${race.name||""}</h3><p>${race.distance||"?"}m · ${t}</p>`;
+      btn.onclick=()=>fetchHorses(race);app.appendChild(btn);
+    });
+  }catch(e){showError("Kunde inte hämta lopp: "+e.message);}
+}
+
+// ── STEP 3: Fetch horses ───────────────────────────────────────────────────────
+async function fetchHorses(race){
+  setTab(3);
+  document.getElementById("app").innerHTML=`<div class="loading"><div class="spin">🏇</div><div class="loading-text">HÄMTAR HÄSTAR...</div></div>`;
+  try{
+    const res=await fetch(`${API}/api/race/${race.id}`);
+    const data=await res.json();
+    const starts=(data.starts||race.starts||[]).filter(h=>h.odds?.place?.["1"]||h.odds?.win);
+    if(!starts.length){showError("Inga odds tillgängliga ännu för detta lopp.");return;}
+    const horses=starts.map(h=>({
+      number:h.number,
+      name:h.name,
+      driver:h.driver?.firstName?`${h.driver.firstName} ${h.driver.lastName}`:h.driver?.shortName||"–",
+      trainer:h.trainer?.firstName?`${h.trainer.firstName} ${h.trainer.lastName}`:null,
+      postPosition:h.postPosition||h.number,
+      odds:parseFloat(h.odds?.place?.["1"]||h.odds?.win)
+    }));
+    renderResult(race.name||`Lopp ${race.number}`,horses,{track:race.track?.name||"",distance:race.distance||"",startMethod:race.startMethod||""});
+  }catch(e){showError("Kunde inte hämta hästar: "+e.message);}
+}
+
+// ── SCREENSHOT HANDLER ─────────────────────────────────────────────────────────
+function compressImage(file,maxDim=1600,quality=0.82){
+  return new Promise((resolve)=>{
+    try{
+      const img=new Image();
+      const url=URL.createObjectURL(file);
+      img.onload=()=>{
+        let{width:w,height:h}=img;
+        if(Math.max(w,h)>maxDim){const s=maxDim/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s);}
+        const canvas=document.createElement("canvas");
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext("2d");
+        ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(b=>{resolve(b||file);},"image/jpeg",quality);
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);resolve(file);};
+      img.src=url;
+    }catch(e){resolve(file);}
+  });
+}
+
+async function scanOne(file,idx){
+  const c=await compressImage(file);
+  const fd=new FormData();
+  fd.append("files",c,`bild${idx+1}.jpg`);
+  const res=await fetch(`${API}/api/scan`,{method:"POST",body:fd});
+  const text=await res.text();
+  let data;
+  try{data=JSON.parse(text);}catch(e){return{ok:false,err:"Serverfel: "+text.slice(0,120)};}
+  if(!res.ok)return{ok:false,err:"Fel "+res.status};
+  if(data.error)return{ok:false,err:data.error};
+  return{ok:true,data};
+}
+
+async function handleScreenshot(files){
+  if(!files||!files.length)return;
+  setTab(3);
+  const n=files.length;
+  const app=document.getElementById("app");
+  app.innerHTML=`<div class="loading"><div class="spin">🔍</div><div class="loading-text">AI LÄSER AV LOPPET...</div><div class="loading-sub" id="prog">Läser bild 1 av ${n}...</div></div>`;
+
+  // Skanna varje bild for sig - antalet bilder spelar da ingen roll,
+  // och en strulig bild stoppar inte de andra.
+  const merged={};        // number -> horse (slas ihop, fyller i tomma falt)
+  let meta={raceName:"",track:"",distance:"",startMethod:""};
+  let anyOk=false;
+  const fails=[];
+
+  for(let i=0;i<files.length;i++){
+    const p=document.getElementById("prog");if(p)p.textContent=`Läser bild ${i+1} av ${n}...`;
+    let r;
+    try{r=await scanOne(files[i],i);}catch(e){r={ok:false,err:e.message};}
+    if(!r.ok){fails.push(`Bild ${i+1}: ${r.err}`);continue;}
+    anyOk=true;
+    const d=r.data;
+    if(d.raceName&&!meta.raceName)meta.raceName=d.raceName;
+    if(d.track&&!meta.track)meta.track=d.track;
+    if(d.distance&&!meta.distance)meta.distance=d.distance;
+    if(d.startMethod&&!meta.startMethod)meta.startMethod=d.startMethod;
+    (d.horses||[]).forEach(h=>{
+      if(h.number==null)return;
+      if(!merged[h.number]){merged[h.number]=h;}
+      else{
+        // fyll i falt som saknas fran tidigare bild
+        Object.keys(h).forEach(k=>{
+          if((merged[h.number][k]==null||merged[h.number][k]==="")&&h[k]!=null&&h[k]!=="")merged[h.number][k]=h[k];
+        });
+      }
+    });
+  }
+
+  const horses=Object.values(merged).filter(h=>h.odds!=null);
+  if(!anyOk){showError("Kunde inte läsa någon bild. "+(fails[0]||""));renderGames();return;}
+  if(!horses.length){showError("Inga hästar med odds hittades. Försök med tydligare bild.");renderGames();return;}
+  if(fails.length){
+    // visa en diskret varning men fortsatt med det vi fick
+    console.warn("Vissa bilder kunde inte läsas:",fails);
+  }
+  renderResult(meta.raceName||"Lopp",horses,meta);
+}
+
+// ── RENDER RESULT ──────────────────────────────────────────────────────────────
+function renderResult(raceName,horses,meta){
+  meta=meta||{};
+  horses.sort((a,b)=>a.odds-b.odds);
+  const allOdds=horses.map(h=>h.odds);
+  const totalImplied=allOdds.reduce((s,o)=>s+oddsToImplied(o),0);
+  const overround=(totalImplied-100).toFixed(1);
+  const minOdds=Math.min(...allOdds);
+  const valueHorses=horses.filter((h,i)=>{
+    const share=(oddsToImplied(h.odds)/totalImplied)*100;
+    return h.odds>=5&&i>=1&&share<((horses.length-i)/horses.length)*45;
+  });
+
+  const app=document.getElementById("app");app.innerHTML="";
+
+  // Header
+  const hdr=document.createElement("div");hdr.className="result-header";
+  const nb=document.createElement("button");nb.className="new-btn";nb.textContent="+ Nytt lopp";nb.onclick=renderGames;
+  hdr.innerHTML=`<div><div style="font-size:9px;color:var(--muted);letter-spacing:2px">LOPP</div><div style="font-size:17px;font-weight:800">${raceName}</div></div>`;
+  hdr.appendChild(nb);app.appendChild(hdr);
+
+  // Field stats
+  const fs=document.createElement("div");fs.className="field-stats";
+  fs.innerHTML=`<div class="sec-lbl">FÄLTÖVERSIKT</div>`;
+  [["Antal hästar",horses.length+" st",""],["Poolöverrund","+"+overround+"%","var(--gold)"],["ATGs husandel","~25-30%","var(--red)"],["Värdespel",valueHorses.length>0?valueHorses.length+" st ("+valueHorses.map(h=>"#"+h.number).join(", ")+")":"Inga",valueHorses.length>0?"var(--green)":"var(--textdim)"]].forEach(([l,v,c])=>{
+    fs.innerHTML+=`<div class="stat-row"><span class="stat-label">${l}</span><span class="stat-val" style="color:${c||"var(--text)"}">${v}</span></div>`;
+  });
+  fs.innerHTML+=`<div style="margin-top:12px;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:8px">MODELLVIKTER</div>`;
+  [["Spår/Fält",31,"var(--accent)"],["Bana/Distans",23,"var(--gold)"],["Kusk/Tränare",18,"var(--green)"],["Utrustning",15,"var(--orange)"],["Pooldynamik",13,"var(--purple)"]].forEach(([l,p,c])=>{
+    fs.innerHTML+=`<div class="w-row"><div class="w-label">${l}</div><div class="bar-track"><div class="bar-fill" style="width:${(p/35)*100}%;background:${c}"></div></div><div class="w-pct" style="color:${c}">${p}%</div></div>`;
+  });
+  app.appendChild(fs);
+
+  // Horse cards
+  horses.forEach((horse,rank)=>{
+    const odds=horse.odds;
+    const impl=oddsToImplied(odds);
+    const share=(impl/totalImplied)*100;
+    const isTop=odds===minOdds;
+    const isValue=odds>=5&&rank>=1&&share<((horses.length-rank)/horses.length)*45;
+    const score=Math.min(99,Math.round(((horses.length-rank)/horses.length)*65+Math.max(0,30-share)*0.8));
+    const sc=score>65?"var(--green)":score>40?"var(--gold)":"var(--red)";
+    const oc=odds<3?"var(--red)":odds>10?"var(--green)":"var(--gold)";
+    const rp=((horses.length-rank)/horses.length)*0.7;
+    const mp=impl/100;
+    const bl=0.6*Math.log(Math.max(.001,rp)/Math.max(.001,1-rp))+0.4*Math.log(Math.max(.001,mp)/Math.max(.001,1-mp));
+    const benter=(1/(1+Math.exp(-bl))*100).toFixed(1);
+
+    const card=document.createElement("div");
+    card.className=`horse-card${isTop?" top":""}${isValue?" value":""}`;
+    card.innerHTML=`
+      <div class="tags">
+        ${isTop?`<span class="tag" style="background:rgba(0,212,255,.15);color:var(--accent);border:1px solid rgba(0,212,255,.3)">FAVORIT</span>`:""}
+        ${isValue?`<span class="tag" style="background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)">⭐ VÄRDESPEL?</span>`:""}
+      </div>
+      <div class="horse-main">
+        <div class="horse-left">
+          <div class="horse-num">${horse.number}</div>
+          <div><div class="horse-name">${horse.name}</div><div class="horse-driver">🧑 ${horse.driver||"–"}</div></div>
+        </div>
+        <div><div class="horse-odds" style="color:${oc}">${odds.toFixed(2)}</div><div class="odds-lbl">V-ODDS</div></div>
+      </div>
+      <div class="score-row">
+        <div class="score-lbl">POÄNG</div>
+        <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${score}%;background:${sc}"></div></div>
+        <div class="score-val" style="color:${sc}">${score}</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-box-lbl">POOLANDEL</div><div class="stat-box-val" style="color:${share>50?"var(--red)":share>25?"var(--gold)":"var(--green)"}">${share.toFixed(1)}%</div></div>
+        <div class="stat-box"><div class="stat-box-lbl">IMPLICIT</div><div class="stat-box-val">${impl.toFixed(1)}%</div></div>
+        <div class="stat-box"><div class="stat-box-lbl">BENTER</div><div class="stat-box-val" style="color:var(--purple)">${benter}%</div></div>
+      </div>
+      ${(horse.winPct||horse.placePct||horse.record||horse.form2026||horse.formLivs)?`
+      <div style="margin-top:10px;padding:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:8px">
+        <div style="font-size:9px;color:var(--green);letter-spacing:1px;margin-bottom:6px">✓ RIKTIG ATG-STATISTIK</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--text)">
+          ${horse.winPct?`<span>Seger%: <b style="color:var(--green)">${horse.winPct}${String(horse.winPct).includes("%")?"":"%"}</b></span>`:""}
+          ${horse.placePct?`<span>Plats%: <b>${horse.placePct}${String(horse.placePct).includes("%")?"":"%"}</b></span>`:""}
+          ${horse.form2026?`<span>2026: <b>${horse.form2026}</b></span>`:""}
+          ${horse.formLivs?`<span>Livs: <b>${horse.formLivs}</b></span>`:""}
+          ${horse.record?`<span>Rekord: <b>${horse.record}</b></span>`:""}
+          ${horse.homeTrack?`<span>Hemmabana: <b>${horse.homeTrack}</b></span>`:""}
+        </div>
+      </div>`:""}
+      <div class="details" id="det-${horse.number}">
+        <div style="font-size:10px;color:var(--accent);letter-spacing:2px;margin-bottom:8px">DETALJAD ANALYS</div>
+        ${[["V-Odds",odds.toFixed(2),oc],["Implicit chans",impl.toFixed(1)+"%",""],["Poolandel",share.toFixed(1)+"%",share>40?"var(--red)":"var(--green)"],["Benter-kalibrerad",benter+"%","var(--purple)"],["Modellpoäng",score+"/100",sc],["Värdebedömning",isValue?"✅ Underskattad":isTop&&odds<1.5?"⚠️ Överspelad?":"➖ Neutral",isValue?"var(--green)":isTop&&odds<1.5?"var(--gold)":"var(--textdim)"]].map(([l,v,c])=>`<div class="stat-row"><span class="stat-label">${l}</span><span class="stat-val" style="color:${c||"var(--text)"}">${v}</span></div>`).join("")}
+        <div class="benter-box">
+          <div style="font-size:9px;color:var(--purple);letter-spacing:1px;margin-bottom:4px">BENTER LOG-ODDS BLEND (α=0.6)</div>
+          <div style="font-size:11px;color:var(--textdim);line-height:1.6">Kombinerar modellens analys (60%) med marknadens poolodds (40%). Hästar där kalibrerad chans > poolandel = potentiellt värdespel.</div>
+        </div>
+      </div>
+      <div class="toggle-hint" id="hint-${horse.number}">▼ Visa alla siffror</div>`;
+    card.onclick=()=>{
+      const d=document.getElementById("det-"+horse.number);
+      const h=document.getElementById("hint-"+horse.number);
+      const open=d.style.display==="block";
+      d.style.display=open?"none":"block";
+      h.textContent=open?"▼ Visa alla siffror":"▲ Dölj detaljer";
+    };
+    app.appendChild(card);
+  });
+
+  // AI box
+  const ai=document.createElement("div");ai.className="ai-box";
+  ai.innerHTML=`
+    <div class="ai-header">
+      <div><div class="ai-title">🤖 AI-ANALYS</div><div class="ai-sub">Full modell · Live formdata · Värdejakt</div></div>
+      <button class="ai-btn" id="aiBtn">ANALYSERA</button>
+    </div>
+    <div id="aiOut" class="ai-placeholder">Tryck Analysera för rekommendationer.</div>`;
+  app.appendChild(ai);
+
+  document.getElementById("aiBtn").onclick=async function(){
+    this.disabled=true;this.textContent="⏳...";
+    document.getElementById("aiOut").innerHTML=`<span style="color:var(--textdim);font-style:italic">Analyserar med full modell · söker aktuell form på webben... (kan ta 30-60 sek)</span>`;
+    const list=horses.map(h=>{
+      let s=`#${h.number} ${h.name} | Kusk: ${h.driver}`;
+      if(h.trainer)s+=` | Tranare: ${h.trainer}`;
+      s+=` | Odds: ${h.odds.toFixed(2)} | Implicit: ${oddsToImplied(h.odds).toFixed(1)}% | Poolandel: ${((oddsToImplied(h.odds)/totalImplied)*100).toFixed(1)}%`;
+      if(h.postPosition)s+=` | Spar: ${h.postPosition}`;
+      if(h.equipment)s+=` | Utrustning: ${h.equipment}`;
+      if(h.winPct)s+=` | Seger%: ${h.winPct}`;
+      if(h.placePct)s+=` | Plats%: ${h.placePct}`;
+      if(h.record)s+=` | Rekord: ${h.record}`;
+      if(h.formLivs)s+=` | Form Livs: ${h.formLivs}`;
+      if(h.form2026)s+=` | Form 2026: ${h.form2026}`;
+      if(h.form2025)s+=` | Form 2025: ${h.form2025}`;
+      if(h.krPerStart)s+=` | Kr/start: ${h.krPerStart}`;
+      if(h.homeTrack)s+=` | Hemmabana: ${h.homeTrack}`;
+      if(h.avgOdds)s+=` | Snittodds: ${h.avgOdds}`;
+      return s;
+    }).join("\n");
+    try{
+      const res=await fetch(`${API}/api/analyze`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({raceName,horses:list,track:meta.track||"",distance:meta.distance||"",startMethod:meta.startMethod||""})});
+      const data=await res.json();
+      document.getElementById("aiOut").className="ai-text";
+      document.getElementById("aiOut").textContent=data.analysis||data.detail||"Fel";
+      this.textContent="✓ KLAR";this.style.background="var(--muted)";
+    }catch(e){
+      document.getElementById("aiOut").textContent="Fel: "+e.message;
+      this.disabled=false;this.textContent="FÖRSÖK IGEN";
+    }
+  };
+
+  const infoBox=document.createElement("div");
+  infoBox.className="info-box";
+  infoBox.innerHTML=`<div style="font-size:9px;color:var(--purple);letter-spacing:2px;margin-bottom:6px">OM MODELLEN</div><div style="font-size:11px;color:var(--textdim);line-height:1.7">XGBoost pairwise ranking · Benter log-odds blend (α=0.6) · Spela alltid ansvarsfullt ⚠️</div>`;
+  app.appendChild(infoBox);
+}
+
+renderGames();
+</script>
+</body>
+</html>
